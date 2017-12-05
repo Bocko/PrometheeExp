@@ -47,8 +47,11 @@ def load_data():
         print_fileinfo(filename2, possible_weights2, unique_rankings2)
         common, different1, different2 = compare(possible_weights, unique_rankings, possible_weights2, unique_rankings2)
         print("Common:", common)
+        print("Length:", len(common))
         print("Unique in first file:", different1)
+        print("Length:", len(different1))
         print("Unique in second file:", different2)
+        print("Length:", len(different2))
 
 if __name__ == "__main__":
     load_data()
