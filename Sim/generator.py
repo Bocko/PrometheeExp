@@ -28,6 +28,22 @@ def generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stab
 
     return unique_rankings
 
+def generate_all_rankings2(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=0):
+    crit_nb = len(func_pref_crit)
+    pool.map(par_ranking_eval, all_weights)
+    unique_rankings = []
+    for weights in all_weights:
+        if stability_level != 0:
+            if ranking[:stability_level] not in unique_rankings:
+                unique_rankings.append(ranking[:stability_level])
+                print(ranking[:stability_level])
+
+        else:
+            if ranking not in unique_rankings:
+                unique_rankings.append(ranking)
+
+    return unique_rankings
+
 # def sum_equal1(seq):
 #     return sum(seq) == 1
 
@@ -67,12 +83,12 @@ if __name__ == "__main__":
     lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = np.linspace(0, 1, 5)
     crit_nb = len(criteria_names)
-    # tic = time.time()
-    # all_weights = generate_all_weights(possible_weights, crit_nb)
-    # print(time.time()-tic)
-    # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=1)
     tic = time.time()
-    unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
+    all_weights = generate_all_weights(possible_weights, crit_nb)
+    print(time.time()-tic)
+    unique_rankings = generate_all_rankings2(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=1)
+    # tic = time.time()
+    # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
     print(time.time()-tic)
     print(len(unique_rankings))
 
