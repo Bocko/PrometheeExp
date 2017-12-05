@@ -4,9 +4,8 @@ from prefFunc import *
 import csv_file
 import testproblem
 
-criteria_names, original_weights, func_pref_crit, names, alternatives = testproblem.subset_bestcities()
-# original_weights, criteria_names, names, alternatives = csv_file.open_csv('epi-2016.csv')
-# func_pref_crit = [PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0)]
+# criteria_names, original_weights, func_pref_crit, names, alternatives = testproblem.subset_bestcities()
+criteria_names, original_weights, func_pref_crit, names, alternatives = testproblem.epi2016()
 
 def netflows_eval(alternatives, weights, func_pref_crit):
     netflows = []

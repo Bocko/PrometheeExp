@@ -113,9 +113,8 @@ def main():
         stability_level = 1
     
     # Load problem
-    criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
-    # original_weights, criteria_names, alt_names, alt_eval = csv_file.open_csv('epi-2016.csv')
-    # func_pref_crit = [PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0)]
+    # criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
+    criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
     # lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = weights_choice(step)
     print("possible_weights:", possible_weights)
