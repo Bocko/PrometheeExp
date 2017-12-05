@@ -15,7 +15,7 @@ def parse_args():
 
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
-    parser.add_argument('-t','--stability_level', nargs=1, type=int)
+    parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
 
@@ -121,8 +121,8 @@ def main():
     else:
         raise('Please use "test" or "epi2016" for now...')
 
-    if args.stability_level != None:
-        stability_level = args.stability_level[0]
+    if args.stability != None:
+        stability_level = args.stability[0]
     else:
         stability_level = 1
     
