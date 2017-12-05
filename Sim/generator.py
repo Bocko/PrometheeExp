@@ -14,6 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Promethee Expressivity')
 
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
+    parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
     parser.add_argument('-t','--stability_level', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
@@ -36,6 +37,11 @@ def generate_all_weights(possible_weights, crit_nb):
     all_weights = [seq for seq in itertools.product(possible_weights, repeat=crit_nb) if sum(seq) == 1]
     return all_weights
 
+def generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names):
+    crit_nb = len(func_pref_crit)
+    all_weights = [(alt_eval, seq, func_pref_crit, alt_names) for seq in itertools.product(possible_weights, repeat=crit_nb) if sum(seq) == 1]
+    return all_weights
+
 def generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=0):
     crit_nb = len(func_pref_crit)
 
@@ -56,7 +62,7 @@ def generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stab
 
 def generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval, stability_level=0):
     crit_nb = len(func_pref_crit)
-    all_rankings = pool.map(par_ranking_eval, all_weights)
+    all_rankings = pool.map(par_ranking_eval2, all_weights)
 
     unique_rankings = []
     for ranking, netflows in all_rankings:
@@ -107,14 +113,19 @@ def main():
     else:
         raise('Please enter positive step value')
 
+    # Loading problem
+    if args.input[0] == 'test':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
+    elif args.input[0] == 'epi2016':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
+    else:
+        raise('Please use "test" or "epi2016" for now...')
+
     if args.stability_level != None:
         stability_level = args.stability_level[0]
     else:
         stability_level = 1
     
-    # Load problem
-    # criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
-    criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
     # lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = weights_choice(step)
     print("possible_weights:", possible_weights)
@@ -122,7 +133,8 @@ def main():
     
     pool = multiprocessing.Pool(4)
     tic = time.time()
-    all_weights = generate_all_weights(possible_weights, crit_nb)
+    # all_weights = generate_all_weights(possible_weights, crit_nb)
+    all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
     print(time.time()-tic)
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
     unique_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)

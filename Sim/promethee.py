@@ -38,6 +38,45 @@ def netflows_eval(alternatives, weights, func_pref_crit):
 
     return netflows
 
+def par_ranking_eval2(args):
+    alternatives, weights, func_pref_crit, names = args
+
+    netflows = []
+    if (len(alternatives) == 1):
+            return alternatives[0]
+
+    for alt1 in alternatives:
+        outRankingPlus = 0
+        outRankingMoins = 0
+        for alt2 in alternatives:
+            if alt1 == alt2:
+                continue
+            PiXA = 0
+            PiAX = 0
+            for k in range(len(func_pref_crit)):
+                weight = weights[k]
+                funcPref = func_pref_crit[k]
+                valAlt1 = alt1[k]
+                valAlt2 = alt2[k]
+                val1 = valAlt1 - valAlt2
+                val2 = valAlt2 - valAlt1
+                PiXA = PiXA + weight * funcPref.value(val1)
+                PiAX = PiAX + weight * funcPref.value(val2)
+            outRankingPlus = outRankingPlus + PiXA
+            outRankingMoins = outRankingMoins + PiAX
+        outRankingPlus = outRankingPlus / (len(alternatives) - 1)
+        outRankingMoins = outRankingMoins / (len(alternatives) - 1)
+        outRanking = outRankingPlus - outRankingMoins
+        netflows.append(outRanking)
+
+    ranking = []
+    sorted_netflows = []
+    for i in sorted(enumerate(netflows), key=lambda x: x[1], reverse=True):
+        ranking.append(names[i[0]])
+        sorted_netflows.append(i[1])
+
+    return ranking, sorted_netflows
+
 def par_ranking_eval(weights):
     # alternatives, weights, func_pref_crit, names = args
 
