@@ -138,7 +138,7 @@ def main():
         filename = args.output[0]
         print("Savefile:", filename)
 
-    start = input("Start? [y]/n: ")
+    start = input("Start? y/[n]: ")
 
     if start.upper() != "Y":
         return 0
