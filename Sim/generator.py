@@ -113,11 +113,14 @@ def main():
     else:
         raise('Please enter positive step value')
 
+    print("Simulation data:")
     # Loading problem
     if args.input[0] == 'test':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
+        print("Problem:", "test")
     elif args.input[0] == 'epi2016':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
+        print("Problem:", "epi2016")
     else:
         raise('Please use "test" or "epi2016" for now...')
 
@@ -125,10 +128,21 @@ def main():
         stability_level = args.stability[0]
     else:
         stability_level = 1
+    print("Stability level:", stability_level)
     
     # lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = weights_choice(step)
-    print("possible_weights:", possible_weights)
+    print("Possible weights:", possible_weights)
+
+    if args.output != None:
+        filename = args.output[0]
+        print("Savefile:", filename)
+
+    start = input("Start? [y]/n: ")
+
+    if start.upper() != "Y":
+        return 0
+
     crit_nb = len(criteria_names)
     
     pool = multiprocessing.Pool(4)
@@ -147,7 +161,6 @@ def main():
     pool.join()
 
     if args.output != None:
-        filename = args.output[0]
         pickle.dump([possible_weights, unique_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
 
