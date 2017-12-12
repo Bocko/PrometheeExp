@@ -166,9 +166,9 @@ def main():
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
     all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
     # unique_rankings = filter_unique_rankings(all_rankings, stability_level=stability_level)
-    tic = time.time()
+    # tic = time.time()
     # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
-    # print(time.time()-tic)
+    print(time.time()-tic)
     # print(len(unique_rankings))
 
     pool.close()
