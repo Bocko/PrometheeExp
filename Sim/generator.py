@@ -81,12 +81,13 @@ def filter_unique_rankings(all_rankings, stability_level=0):
 
     return unique_rankings
 
-# def sum_equal1(seq):
-#     return sum(seq) == 1
+def sum_equal1(seq):
+    return sum(seq) == 1
 
-# def par_generate_all_weights(pool, possible_weights, crit_nb, alt_eval, func_pref_crit, alt_names):
-#     all_weights = itertools.product(possible_weights, repeat=crit_nb)
-#     return [(alt_eval, w, func_pref_crit, alt_names) for w, keep in zip(all_weights, pool.imap(sum_equal1, all_weights)) if keep]
+def par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names):
+    crit_nb = len(func_pref_crit)
+    all_weights = itertools.product(possible_weights, repeat=crit_nb)
+    return [(alt_eval, seq, func_pref_crit, alt_names) for seq, keep in zip(all_weights, pool.imap(sum_equal1, all_weights, chunksize=1024)) if keep]
 
 # def iter_generate_all_weights(pool, possible_weights, crit_nb, alt_eval, func_pref_crit, alt_names):
 #     all_weights = itertools.filterfalse(lambda x: sum(x) != 1,itertools.product(possible_weights, repeat=crit_nb))
@@ -160,7 +161,8 @@ def main():
         if start.upper() != "Y":
             return 0
         tic = time.time()
-        all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
+        # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
+        all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
         pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
     print(time.time()-tic)
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)

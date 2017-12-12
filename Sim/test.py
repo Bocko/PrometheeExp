@@ -1,34 +1,28 @@
 import numpy as np
 import multiprocessing as mp
 import itertools
+import time
 
-alphabet = np.linspace(0, 1, 11)
-num_parts = 6
-part_size = len(alphabet) // num_parts
+possible_weights = np.linspace(0, 1, 11)
+crit_nb = 7
 
-def do_job(first_bits):
-    res = []
-    for x in itertools.product(first_bits, alphabet, alphabet, alphabet, alphabet, alphabet):
-        res.append(x)
-    return res
+def sum1(l):
+    return sum(l) == 1
 
-def main():
-    pool = mp.Pool(4)
-    results = []
-    for i in range(num_parts):
-        if i == num_parts - 1:
-            first_bit = alphabet[part_size * i :]
-        else:
-            first_bit = alphabet[part_size * i : part_size * (i+1)]
-        results.append(pool.apply_async(do_job(first_bit)))
+def pool_filter(p, func, candidates):
+    return [c for c, keep in zip(candidates, p.imap(func, candidates, chunksize=1024)) if keep]
 
-    pool.close()
-    pool.join()
-    # results = [r.get() for r in results]
-    return results
+p = mp.Pool(4)
+tic = time.time()
+w = itertools.product(possible_weights, repeat=crit_nb)
+wc = [c for c in w if sum(c) == 1]
+print(len(wc))
+print(time.time()-tic)
+tic = time.time()
+w = itertools.product(possible_weights, repeat=crit_nb)
+wc = pool_filter(p, sum1, w)
+print(len(wc))
+print(time.time()-tic)
 
-if __name__ == "__main__":
-    results = main()
-    # print(results)
-    # for r in results:
-    #     print(r)
+p.close()
+p.join()
