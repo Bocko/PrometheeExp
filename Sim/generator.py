@@ -144,7 +144,7 @@ def main():
 
     crit_nb = len(criteria_names)
     
-    pool = multiprocessing.Pool(4)
+    pool = multiprocessing.Pool(8)
     # all_weights = generate_all_weights(possible_weights, crit_nb)
     libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
     try:    
