@@ -161,8 +161,8 @@ def main():
         if start.upper() != "Y":
             return 0
         tic = time.time()
-        # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
-        all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
+        all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
+        # all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
         pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
     print(time.time()-tic)
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
