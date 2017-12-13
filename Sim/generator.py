@@ -16,13 +16,10 @@ def parse_args():
 
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
+    parser.add_argument('-m', '--multiplier', nargs=1, type=int)
     # parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
-
-    #parser.add_argument('dot_graph', nargs=1, type=str, required=True)
-    #parser.add_argument('-p','--physical', nargs=1, required=True)
-    #parser.add_argument('-v','--virtual', nargs=1, required=True)
 
     args = parser.parse_args()
     return args
@@ -30,7 +27,7 @@ def parse_args():
 def weights_choice(step):
     start = 0
     stop = 1
-    np_step = 1 / step + 1
+    np_step = int(1 / step + 1)
 
     return np.linspace(start,stop,np_step)
 
@@ -111,6 +108,31 @@ def par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stabili
 
     return unique_rankings
 
+def weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum, result, index):
+    crit_nb = len(func_pref_crit)
+    if index > crit_nb or w_sum < 0:
+        return
+
+    if index == crit_nb:
+        if w_sum == 0:
+            # print(result[:n])
+            yield (alt_eval, np.array(result[:crit_nb]) / int_multiplier, func_pref_crit, alt_names)
+            # yield np.array(result[:crit_nb]) / int_multiplier
+
+        return
+
+    for val in int_possible_weights:
+        result[index] = val
+        result.append(0)
+        yield from weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum-val, result, index + 1) 
+
+def weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum):
+    int_possible_weights = (possible_weights * int_multiplier).astype(int)
+    for val in int_possible_weights:
+        result = [val]
+        result.append(0)
+        yield from weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum-val, result, 1)
+
 def main():
     args = parse_args()
     if args.step[0] > 0:
@@ -134,6 +156,10 @@ def main():
     # else:
     #     stability_level = 1
     # print("Stability level:", stability_level)
+    if args.multiplier != None:
+        int_multiplier = args.multiplier[0]
+    else:
+        int_multiplier = 100
     
     # lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = weights_choice(step)
@@ -161,8 +187,10 @@ def main():
         if start.upper() != "Y":
             return 0
         tic = time.time()
-        all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
+        # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
         # all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
+        all_weights = weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
+        all_weights = list(all_weights)
         pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
     print(time.time()-tic)
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
@@ -181,3 +209,27 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # pool = multiprocessing.Pool(4)
+    # criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
+    # possible_weights = weights_choice(0.5)
+    # # int_possible_weights = (100*possible_weights).astype(int)
+    # # crit_nb = 3
+    # int_multiplier = 100
+    # tic = time.time()
+    # t=weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
+    # t = list(t)
+    # print(time.time()-tic)
+    # # for val in t:
+    # #     print(val)
+    # print(len(t))
+    
+    # tic = time.time()
+    # crit_nb = len(func_pref_crit)
+    # # all_weights = [seq for seq in itertools.product(possible_weights, repeat=crit_nb) if sum(seq) == 1]
+    # # print(len(all_weights))
+    # print(time.time()-tic)
+    # # for val in all_weights:
+    # #     print(val)
+
+    # pool.close()
+    # pool.join()
