@@ -211,6 +211,7 @@ def main():
                 tic = time.time()
                 wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
                 chunk_weights = pickle.load(open(libnames[i], "rb" ))
+            print(time.time()-tic)
             chunk_weights = zip(itertools.repeat(alt_eval), chunk_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
             chunk_rankings = generate_all_rankings2(pool, chunk_weights, func_pref_crit, alt_names, alt_eval)
             chunk_filename = filename + "_" + str(i) + ".sav"
@@ -237,15 +238,15 @@ def main():
             # pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
             wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
             all_weights = pickle.load(open(libname, "rb" ))
-            all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
+        all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
         print(time.time()-tic)
-    # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
+        # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
         all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
-    # unique_rankings = filter_unique_rankings(all_rankings, stability_level=stability_level)
-    # tic = time.time()
-    # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
+        # unique_rankings = filter_unique_rankings(all_rankings, stability_level=stability_level)
+        # tic = time.time()
+        # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
 
-    # print(len(unique_rankings))
+        # print(len(unique_rankings))
         if args.output != None:
             pickle.dump([possible_weights, all_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
