@@ -10,6 +10,7 @@ import multiprocessing
 import time
 import re
 import pickle
+import weights_generator as wg
 
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Promethee Expressivity')
@@ -17,6 +18,7 @@ def parse_args():
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
     parser.add_argument('-m', '--multiplier', nargs=1, type=int)
+    parser.add_argument('-c', '--chunk', nargs=1, type=bool)
     # parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
@@ -138,7 +140,8 @@ def main():
     if args.step[0] > 0:
         step = args.step[0]
     else:
-        raise('Please enter positive step value')
+        print("Error: please enter positive step value")
+        return
 
     print("Simulation data:")
     # Loading problem
@@ -149,7 +152,7 @@ def main():
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
         print("Problem:", "epi2016")
     else:
-        raise('Please use "test" or "epi2016" for now...')
+        raise("Please use 'test' or 'epi2016' for now...")
 
     # if args.stability != None:
     #     stability_level = args.stability[0]
@@ -165,6 +168,13 @@ def main():
     possible_weights = weights_choice(step)
     print("Possible weights:", possible_weights)
 
+    if args.chunk != None:
+        chunk = args.chunk[0]
+    else:
+        chunk = False
+
+    print("Chunks:", chunk)
+
     if args.output != None:
         filename = args.output[0]
         print("Savefile:", filename)
@@ -172,40 +182,76 @@ def main():
     crit_nb = len(criteria_names)
     
     pool = multiprocessing.Pool(8)
-    # all_weights = generate_all_weights(possible_weights, crit_nb)
-    libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
-    try:    
-        all_weights = pickle.load(open(libname, "rb" ))
-        print("Found file for step " + str(step) + ":", libname)
-        start = input("Start? y/[n]: ")
-        if start.upper() != "Y":
-            return 0
-        tic = time.time()
-    except:
-        print("File for step not found!")
-        start = input("Start? y/[n]: ")
-        if start.upper() != "Y":
-            return 0
-        tic = time.time()
-        # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
-        # all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
-        all_weights = weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
-        all_weights = list(all_weights)
-        pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
-    print(time.time()-tic)
+
+    if chunk:
+        if args.output == None:
+            print("Error: --output has to be specified if chunk is used!")
+            return
+
+        libnames = []
+        for i in range(len(possible_weights)):
+            libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_" + str(i) + ".sav"
+            libnames.append(libname)
+
+        for i in range(len(libnames)):
+            try:
+                all_weights = pickle.load(open(libnames[i], "rb" ))
+                print("Found file for step " + str(step) + ":", libnames[i])
+                if i == 0:
+                    start = input("Start? y/[n]: ")
+                    if start.upper() != "Y":
+                        return 0
+                tic = time.time()
+
+            except:
+                print("File for step not found!")
+                start = input("Start? y/[n]: ")
+                if start.upper() != "Y":
+                    return 0
+                tic = time.time()
+                wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+                chunk_weights = pickle.load(open(libnames[i], "rb" ))
+            chunk_weights = zip(itertools.repeat(alt_eval), chunk_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
+            chunk_rankings = generate_all_rankings2(pool, chunk_weights, func_pref_crit, alt_names, alt_eval)
+            chunk_filename = filename + "_" + str(i) + ".sav"
+            pickle.dump([possible_weights, chunk_rankings], open(chunk_filename,'wb'),pickle.HIGHEST_PROTOCOL)
+    else:
+        libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
+        try:    
+            all_weights = pickle.load(open(libname, "rb" ))
+            print("Found file for step " + str(step) + ":", libname)
+            start = input("Start? y/[n]: ")
+            if start.upper() != "Y":
+                return 0
+            tic = time.time()
+        except:
+            print("File for step not found!")
+            start = input("Start? y/[n]: ")
+            if start.upper() != "Y":
+                return 0
+            tic = time.time()
+            # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
+            # all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
+            # all_weights = weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
+            # all_weights = list(all_weights)
+            # pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
+            wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+            all_weights = pickle.load(open(libname, "rb" ))
+            all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
+        print(time.time()-tic)
     # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
-    all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
+        all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
     # unique_rankings = filter_unique_rankings(all_rankings, stability_level=stability_level)
     # tic = time.time()
     # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
-    print(time.time()-tic)
-    # print(len(unique_rankings))
 
+    # print(len(unique_rankings))
+        if args.output != None:
+            pickle.dump([possible_weights, all_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
+
+    print(time.time()-tic)
     pool.close()
     pool.join()
-
-    if args.output != None:
-        pickle.dump([possible_weights, all_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
     main()

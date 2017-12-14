@@ -104,9 +104,9 @@ def load_data():
         plot_data(all_rankings, stability_level, plot_filename, plot_type)
 
 if __name__ == "__main__":
-    # load_data()
+    load_data()
 
-    filename = "epi2016/epi2016_01.sav"
-    stability_level = 1
-    [possible_weights, all_rankings] = pickle.load(open(filename, "rb" ))
-    distrib = compute_distribution(all_rankings, stability_level)
+    # filename = "epi2016/epi2016_01.sav"
+    # stability_level = 1
+    # [possible_weights, all_rankings] = pickle.load(open(filename, "rb" ))
+    # distrib = compute_distribution(all_rankings, stability_level)

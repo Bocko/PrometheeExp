@@ -3,9 +3,7 @@
 import argparse
 import numpy as np
 import itertools
-# import testproblem
 import csv_file
-from promethee import *
 import multiprocessing
 import time
 import re
@@ -92,14 +90,18 @@ def main():
     else:
         chunk = False
 
-    crit_nb = args.crit_nb[0]
-
     print("Chunks:", chunk)
+
+    crit_nb = args.crit_nb[0]
 
     if args.multiplier != None:
         int_multiplier = args.multiplier[0]
     else:
         int_multiplier = 100
+
+    start = input("Start? y/[n]: ")
+    if start.upper() != "Y":
+        return 0
 
     weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
 
