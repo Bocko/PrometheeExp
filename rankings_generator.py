@@ -195,7 +195,7 @@ def main():
 
         for i in range(len(libnames)):
             try:
-                all_weights = pickle.load(open(libnames[i], "rb" ))
+                chunk_weights = pickle.load(open(libnames[i], "rb" ))
                 print("Found file for step " + str(step) + ":", libnames[i])
                 if i == 0:
                     start = input("Start? y/[n]: ")
