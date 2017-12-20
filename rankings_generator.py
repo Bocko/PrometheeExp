@@ -10,7 +10,10 @@ import multiprocessing
 import time
 import re
 import pickle
+import os
 import weights_generator as wg
+
+LIB_DIR = 'lib'
 
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Promethee Expressivity')
@@ -135,6 +138,14 @@ def weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_name
         result.append(0)
         yield from weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum-val, result, 1)
 
+def list_lib(libname):
+    libnames = os.listdir(LIB_DIR)
+    for i in range(len(libnames)-1,-1,-1):
+        if libname not in libnames[i]:
+            libnames.pop(i)
+
+    return libnames
+
 def main():
     args = parse_args()
     if args.step[0] > 0:
@@ -184,30 +195,26 @@ def main():
             print("Error: --output has to be specified if chunk is used!")
             return
 
-        libnames = []
-        for i in range(len(possible_weights)):
-            libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_" + str(i) + ".sav"
-            libnames.append(libname)
+        libname = "step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_"
+        libnames = list_lib(libname)
+
+        if libnames == []:
+            print("File for step not found!")
+            start = input("Start? y/[n]: ")
+            if start.upper() != "Y":
+                return 0
+            tic = time.time()
+            wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
+            libnames = list_lib(libname)
+        else:
+            print("Found file for step " + str(step) + ":", libnames)
+            start = input("Start? y/[n]: ")
+            if start.upper() != "Y":
+                return 0
+            tic = time.time()
 
         for i in range(len(libnames)):
-            try:
-                chunk_weights = pickle.load(open(libnames[i], "rb" ))
-                print("Found file for step " + str(step) + ":", libnames[i])
-                if i == 0:
-                    start = input("Start? y/[n]: ")
-                    if start.upper() != "Y":
-                        return 0
-                tic = time.time()
-
-            except:
-                print("File for step not found!")
-                start = input("Start? y/[n]: ")
-                if start.upper() != "Y":
-                    return 0
-                tic = time.time()
-                # wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
-                wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
-                chunk_weights = pickle.load(open(libnames[i], "rb" ))
+            chunk_weights = pickle.load(open(os.path.join(LIB_DIR, libnames[i]), "rb" ))
             print("Length of chunk_weights " + str(i) + ":", len(chunk_weights))
             print(time.time()-tic)
             chunk_weights = zip(itertools.repeat(alt_eval), chunk_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
@@ -215,7 +222,7 @@ def main():
             chunk_filename = filename + "_" + str(i) + ".sav"
             pickle.dump([possible_weights, chunk_rankings], open(chunk_filename,'wb'),pickle.HIGHEST_PROTOCOL)
     else:
-        libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
+        libname = os.path.join(LIB_DIR, "step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav")
         try:    
             all_weights = pickle.load(open(libname, "rb" ))
             print("Found file for step " + str(step) + ":", libname)

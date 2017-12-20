@@ -9,6 +9,8 @@ import time
 import re
 import pickle
 
+LIB_DIR = 'lib'
+
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Promethee Expressivity')
 
@@ -78,9 +80,9 @@ def weights_generator_recurs_fill(step, possible_weights, crit_nb, int_multiplie
         if w_sum == 0:
             weights_list.append(np.array(result[:crit_nb]) / int_multiplier)
             if chunk_size != 0 and len(weights_list) == chunk_size:
-                del weights_list[:]
                 libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_" + str(chunk_id[0]) + ".sav"
                 pickle.dump(weights_list, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
+                del weights_list[:]
                 chunk_id[0] += 1
 
         return
@@ -135,6 +137,7 @@ def main():
         return 0
 
     int_possible_weights = (possible_weights * int_multiplier).astype(int)
+    weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
     # weights_generator(pool, chunk, step, int_possible_weights, crit_nb, int_multiplier, int_multiplier)
 
 
