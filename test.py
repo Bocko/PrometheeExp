@@ -1,28 +1,31 @@
-import numpy as np
-import multiprocessing as mp
-import itertools
-import time
+#!/usr/bin/env python3
 
-possible_weights = np.linspace(0, 1, 6)
-crit_nb = 7
+def weights_generator_recurs_fill(possible_weights, crit_nb, int_multiplier, all_weights, w_sum, result=[0], index=0):
+    if index > crit_nb or w_sum < 0:
+        return
 
-def sum1(l):
-    return sum(l) == 1
+    if index == crit_nb:
+        if w_sum == 0:
+            all_weights.append(result[:crit_nb])
+            # yield result[:crit_nb]
 
-def pool_filter(p, func, l):
-    return [c for c, keep in zip(l, p.imap(func, l, chunksize=1024)) if keep]
+        return
 
-p = mp.Pool(4)
-tic = time.time()
-w1 = itertools.product(possible_weights, repeat=crit_nb)
-wc1 = [c for c in w1 if sum(c) == 1]
-print(len(wc1))
-print(time.time()-tic)
-tic = time.time()
-w2 = itertools.product(possible_weights, repeat=crit_nb)
-wc2 = pool_filter(p, sum1, w2)
-print(len(wc2))
-print(time.time()-tic)
+    for val in possible_weights:
+        result[index] = val
+        result.append(0)
+        weights_generator_recurs_fill(possible_weights, crit_nb, int_multiplier, all_weights, w_sum-val, result, index + 1)
 
-p.close()
-p.join()
+def weights_generator_iter(possible_weights, crit_nb, int_multiplier):
+    pass
+
+crit_nb = 4
+possible_weights = [0, 50, 100]
+int_multiplier = 100
+chunk = True
+all_weights = []
+weights_generator_recurs_fill(possible_weights, crit_nb, int_multiplier, all_weights, int_multiplier)
+# weights = list(weights)
+# for val in weights:
+#     print(val)
+# print(len(weights))

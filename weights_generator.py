@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
     parser.add_argument('-n', '--crit_nb', nargs=1, type=int, required=True)
     parser.add_argument('-m', '--multiplier', nargs=1, type=int)
-    parser.add_argument('-c', '--chunk', nargs=1, type=bool)
+    parser.add_argument('-c', '--chunk_size', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
 
@@ -29,7 +29,7 @@ def weights_choice(step):
 
     return np.linspace(start,stop,np_step)
 
-def weights_generator_recurs(int_possible_weights, crit_nb, int_multiplier, w_sum, result, index):
+def weights_generator_recurs(possible_weights, crit_nb, int_multiplier, w_sum, result, index):
     if index > crit_nb or w_sum < 0:
         return
 
@@ -41,21 +41,20 @@ def weights_generator_recurs(int_possible_weights, crit_nb, int_multiplier, w_su
 
         return
 
-    for val in int_possible_weights:
+    for val in possible_weights:
         result[index] = val
         result.append(0)
-        yield from weights_generator_recurs(int_possible_weights, crit_nb, int_multiplier, w_sum-val, result, index + 1)
+        yield from weights_generator_recurs(possible_weights, crit_nb, int_multiplier, w_sum-val, result, index + 1)
 
 def weights_generator_func(par_weights):
-    (val, int_possible_weights, crit_nb, int_multiplier, w_sum) = par_weights
+    (val, possible_weights, crit_nb, int_multiplier, w_sum) = par_weights
     result = [val]
     result.append(0)
-    yield from weights_generator_recurs(int_possible_weights, crit_nb, int_multiplier, w_sum-val, result, 1)
+    yield from weights_generator_recurs(possible_weights, crit_nb, int_multiplier, w_sum-val, result, 1)
 
 def weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, w_sum):
-    int_possible_weights = (possible_weights * int_multiplier).astype(int)
     # par_weights = [(val, alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum) for val in int_possible_weights]
-    par_weights = [(val, int_possible_weights, crit_nb, int_multiplier, w_sum) for val in int_possible_weights]
+    par_weights = [(val, possible_weights, crit_nb, int_multiplier, w_sum) for val in possible_weights]
     all_weights = []
     for i in range(len(par_weights)):
         weights = weights_generator_func(par_weights[i])
@@ -71,8 +70,39 @@ def weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multipli
         libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
         pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
 
+def weights_generator_recurs_fill(step, possible_weights, crit_nb, int_multiplier, weights_list, w_sum, chunk_size, chunk_id, result=[0], index=0):
+    if index > crit_nb or w_sum < 0:
+        return
+
+    if index == crit_nb:
+        if w_sum == 0:
+            weights_list.append(np.array(result[:crit_nb]) / int_multiplier)
+            if chunk_size != 0 and len(weights_list) == chunk_size:
+                del weights_list[:]
+                libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_" + str(chunk_id[0]) + ".sav"
+                pickle.dump(weights_list, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
+                chunk_id[0] += 1
+
+        return
+
+    for val in possible_weights:
+        result[index] = val
+        result.append(0)
+        weights_generator_recurs_fill(step, possible_weights, crit_nb, int_multiplier, weights_list, w_sum-val, chunk_size, chunk_id, result, index + 1)
+
+def weights_generator_recurs_chunk(step, possible_weights, crit_nb, int_multiplier, w_sum, chunk_size, chunk_id, result=[0], index=0):
+    weights_list = []
+    weights_generator_recurs_fill(step, possible_weights, crit_nb, int_multiplier, weights_list, int_multiplier, chunk_size, chunk_id)
+    if len(weights_list) != 0:
+        if chunk_size != 0:
+            libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + "_" + str(chunk_id[0]) + ".sav"
+            pickle.dump(weights_list, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
+        else:
+            libname = "lib/step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav"
+            pickle.dump(weights_list, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
+
 def main():
-    pool = multiprocessing.Pool(4)
+    # pool = multiprocessing.Pool(4)
 
     args = parse_args()
     if args.step[0] > 0:
@@ -85,12 +115,13 @@ def main():
     possible_weights = weights_choice(step)
     print("Possible weights:", possible_weights)
 
-    if args.chunk != None:
-        chunk = args.chunk[0]
+    if args.chunk_size != None:
+        chunk_size = args.chunk_size[0]
     else:
-        chunk = False
+        chunk_size = 0
+    chunk_id = [0]
 
-    print("Chunks:", chunk)
+    print("Chunk size:", chunk_size)
 
     crit_nb = args.crit_nb[0]
 
@@ -103,21 +134,12 @@ def main():
     if start.upper() != "Y":
         return 0
 
-    weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
-
-    pool.close()
-    pool.join()
-
-if __name__ == "__main__":
-    main()
-    # pool = multiprocessing.Pool(4)
-    # criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.subset_bestcities()
-    # step = 0.5
-    # possible_weights = weights_choice(step)
-    # int_multiplier = 100
-    # chunk = True
-    # weights_generator(pool, chunk, step, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
+    int_possible_weights = (possible_weights * int_multiplier).astype(int)
+    # weights_generator(pool, chunk, step, int_possible_weights, crit_nb, int_multiplier, int_multiplier)
 
 
     # pool.close()
     # pool.join()
+
+if __name__ == "__main__":
+    main()

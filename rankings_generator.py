@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('-s','--step', nargs=1, type=float, required=True)
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
     parser.add_argument('-m', '--multiplier', nargs=1, type=int)
-    parser.add_argument('-c', '--chunk', nargs=1, type=bool)
+    parser.add_argument('-c', '--chunk_size', nargs=1, type=int)
     # parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
@@ -154,26 +154,22 @@ def main():
     else:
         raise("Please use 'test' or 'epi2016' for now...")
 
-    # if args.stability != None:
-    #     stability_level = args.stability[0]
-    # else:
-    #     stability_level = 1
-    # print("Stability level:", stability_level)
     if args.multiplier != None:
         int_multiplier = args.multiplier[0]
     else:
         int_multiplier = 100
     
-    # lin_spacing = [3, 5, 9, 11, 17, 21, 41, 101]
     possible_weights = weights_choice(step)
     print("Possible weights:", possible_weights)
+    int_possible_weights = (possible_weights * int_multiplier).astype(int)
 
-    if args.chunk != None:
-        chunk = args.chunk[0]
+    if args.chunk_size != None:
+        chunk_size = args.chunk_size[0]
     else:
-        chunk = False
+        chunk_size = 0
+    chunk_id = [0]
 
-    print("Chunks:", chunk)
+    print("Chunk size:", chunk_size)
 
     if args.output != None:
         filename = args.output[0]
@@ -183,7 +179,7 @@ def main():
     
     pool = multiprocessing.Pool(8)
 
-    if chunk:
+    if chunk_size != 0:
         if args.output == None:
             print("Error: --output has to be specified if chunk is used!")
             return
@@ -209,7 +205,8 @@ def main():
                 if start.upper() != "Y":
                     return 0
                 tic = time.time()
-                wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+                # wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+                wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
                 chunk_weights = pickle.load(open(libnames[i], "rb" ))
             print("Length of chunk_weights " + str(i) + ":", len(chunk_weights))
             print(time.time()-tic)
@@ -232,23 +229,13 @@ def main():
             if start.upper() != "Y":
                 return 0
             tic = time.time()
-            # all_weights = generate_all_weights2(alt_eval, possible_weights, func_pref_crit, alt_names)
-            # all_weights = par_generate_all_weights(pool, alt_eval, possible_weights, func_pref_crit, alt_names)
-            # all_weights = weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
-            # all_weights = list(all_weights)
-            # pickle.dump(all_weights, open(libname,'wb'),pickle.HIGHEST_PROTOCOL)
-            wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+            # wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+            wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
             all_weights = pickle.load(open(libname, "rb" ))
         print("Length of all_weights:", len(all_weights))
         print(time.time()-tic)
         all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
-        # unique_rankings = generate_all_rankings(all_weights, func_pref_crit, alt_names, alt_eval, stability_level=stability_level)
         all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
-        # unique_rankings = filter_unique_rankings(all_rankings, stability_level=stability_level)
-        # tic = time.time()
-        # unique_rankings = par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stability_level=1)
-
-        # print(len(unique_rankings))
         if args.output != None:
             pickle.dump([possible_weights, all_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
@@ -258,27 +245,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # pool = multiprocessing.Pool(4)
-    # criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
-    # possible_weights = weights_choice(0.5)
-    # # int_possible_weights = (100*possible_weights).astype(int)
-    # # crit_nb = 3
-    # int_multiplier = 100
-    # tic = time.time()
-    # t=weights_generator(pool, alt_eval, possible_weights, func_pref_crit, alt_names, int_multiplier, int_multiplier)
-    # t = list(t)
-    # print(time.time()-tic)
-    # # for val in t:
-    # #     print(val)
-    # print(len(t))
-    
-    # tic = time.time()
-    # crit_nb = len(func_pref_crit)
-    # # all_weights = [seq for seq in itertools.product(possible_weights, repeat=crit_nb) if sum(seq) == 1]
-    # # print(len(all_weights))
-    # print(time.time()-tic)
-    # # for val in all_weights:
-    # #     print(val)
-
-    # pool.close()
-    # pool.join()
