@@ -17,5 +17,10 @@ def subset_bestcities():
 
 def epi2016():
     original_weights, criteria_names, alt_names, alt_eval = csv_file.open_csv('epi2016/epi-2016.csv')
-    func_pref_crit = [PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0), PreferenceType2(0)]
+    func_pref_crit = [PreferenceType2(0) for i in range(len(criteria_names))]
+    return criteria_names, original_weights, func_pref_crit, alt_names, alt_eval
+
+def hdi2016():
+    original_weights, criteria_names, alt_names, alt_eval = csv_file.open_csv('hdi/hdi2016.csv')
+    func_pref_crit = [PreferenceType2(0) for i in range(len(criteria_names))]
     return criteria_names, original_weights, func_pref_crit, alt_names, alt_eval

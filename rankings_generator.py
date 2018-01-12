@@ -162,8 +162,11 @@ def main():
     elif args.input[0] == 'epi2016':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.epi2016()
         print("Problem:", "epi2016")
+    elif args.input[0] == 'hdi2016':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.hdi2016()
+        print("Problem:", "hdi2016")
     else:
-        raise("Please use 'test' or 'epi2016' for now...")
+        raise("Please use 'test', 'epi2016', 'hdi2016' for now...")
 
     if args.multiplier != None:
         int_multiplier = args.multiplier[0]
