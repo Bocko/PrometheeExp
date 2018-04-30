@@ -121,7 +121,7 @@ def compute_distribution(all_rankings, stability_level):
     for ranking, netflows in all_rankings:
         tranking = tuple(ranking)
         # if stability_level != 0:
-            distrib[tranking[:stability_level]] = distrib.get(tranking[:stability_level],0) + 1
+        distrib[tranking[:stability_level]] = distrib.get(tranking[:stability_level],0) + 1
         # else:
         #     distrib[tranking] = distrib.get(tranking,0) + 1
 
@@ -143,7 +143,7 @@ def load_data():
         if args.stability[0] == 0:
             raise ValueError("Stability level cannot be 0")
         else:
-        stability_level = args.stability[0]
+            stability_level = args.stability[0]
     else:
         stability_level = 1
 
