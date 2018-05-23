@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
     parser.add_argument('-m', '--multiplier', nargs=1, type=int)
     parser.add_argument('-c', '--chunk_size', nargs=1, type=int)
+    parser.add_argument('-d', '--method', nargs=1, type=str, required=True)
     # parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
@@ -113,6 +114,21 @@ def par_generate_all_rankings(pool, func_pref_crit, alt_names, alt_eval, stabili
 
     return unique_rankings
 
+def maut_ranking(args):
+    alt_eval, alt_names, weights = args
+    prod = np.sum(np.array(alt_eval) * weights, axis=1)
+    ranking = []
+    score = []
+    for i in sorted(enumerate(prod), key=lambda x: x[1], reverse=True):
+        ranking.append(alt_names[i[0]])
+        score.append(i[1])
+
+    return ranking, score
+    
+def generate_all_maut_rankings(pool, all_weights):
+    all_rankings = pool.map(maut_ranking, all_weights)
+    return all_rankings
+
 def weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum, result, index):
     crit_nb = len(func_pref_crit)
     if index > crit_nb or w_sum < 0:
@@ -189,6 +205,15 @@ def main():
         filename = args.output[0]
         print("Savefile:", filename)
 
+    promethee_flag = False
+    maut_flag = False
+    if args.method[0].lower() == "promethee":
+        promethee_flag = True
+        print("Method: PROMETHEE II")
+    elif args.method[0].lower() == "maut":
+        maut_flag = True
+        print("Method: MAUT")
+
     crit_nb = len(criteria_names)
     
     pool = multiprocessing.Pool(8)
@@ -220,8 +245,12 @@ def main():
             chunk_weights = pickle.load(open(os.path.join(LIB_DIR, libnames[i]), "rb" ))
             print("Length of chunk_weights " + str(i) + ":", len(chunk_weights))
             print(time.time()-tic)
-            chunk_weights = zip(itertools.repeat(alt_eval), chunk_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
-            chunk_rankings = generate_all_rankings2(pool, chunk_weights, func_pref_crit, alt_names, alt_eval)
+            if promethee_flag:
+                chunk_weights = zip(itertools.repeat(alt_eval), chunk_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
+                chunk_rankings = generate_all_rankings2(pool, chunk_weights, func_pref_crit, alt_names, alt_eval)
+            elif maut_flag:
+                chunk_weights = zip(itertools.repeat(alt_eval), itertools.repeat(alt_names), chunk_weights)
+                chunk_rankings = generate_all_maut_rankings(pool, chunk_weights)
             chunk_filename = filename + "_" + str(i) + ".sav"
             pickle.dump([possible_weights, chunk_rankings], open(chunk_filename,'wb'),pickle.HIGHEST_PROTOCOL)
     else:
@@ -244,8 +273,12 @@ def main():
             all_weights = pickle.load(open(libname, "rb" ))
         print("Length of all_weights:", len(all_weights))
         print(time.time()-tic)
-        all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
-        all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
+        if promethee_flag:
+            all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
+            all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
+        elif maut_flag:
+            all_weights = zip(itertools.repeat(alt_eval), itertools.repeat(alt_names), all_weights)
+            all_rankings = generate_all_maut_rankings(pool, all_weights)
         if args.output != None:
             pickle.dump([possible_weights, all_rankings], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
