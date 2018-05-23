@@ -181,6 +181,9 @@ def main():
     elif args.input[0] == 'hdi2016':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.hdi2016()
         print("Problem:", "hdi2016")
+    elif args.input[0] == 'studentcities2017':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.studentcities2017()
+        print("Problem:", "studentcities2017")
     else:
         raise("Please use 'test', 'epi2016', 'hdi2016' for now...")
 
