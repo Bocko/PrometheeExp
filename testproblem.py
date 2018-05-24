@@ -29,3 +29,8 @@ def studentcities2017():
     original_weights, criteria_names, alt_names, alt_eval = csv_file.open_csv('studentcities/studentcities2017.csv')
     func_pref_crit = [PreferenceType2(0) for i in range(len(criteria_names))]
     return criteria_names, original_weights, func_pref_crit, alt_names, alt_eval
+
+def safecities2017():
+    original_weights, criteria_names, alt_names, alt_eval = csv_file.open_csv('safecities/eiu_safecities2017.csv')
+    func_pref_crit = [PreferenceType2(0) for i in range(len(criteria_names))]
+    return criteria_names, original_weights, func_pref_crit, alt_names, alt_eval

@@ -11,6 +11,7 @@ def parse_args():
     parser.add_argument("filename", nargs=1, type=str)
     parser.add_argument('-t','--stability', nargs=1, type=int)
     parser.add_argument('-c', '--compare', nargs=1, type=str)
+    parser.add_argument('-a', '--statonly', nargs='*', default=False)
     parser.add_argument('-p', '--plot', nargs=2, type=str)
     args = parser.parse_args()
  
