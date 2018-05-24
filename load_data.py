@@ -117,6 +117,61 @@ def plot_compare(all_rankings, all_rankings2, stability_level, plot_filename, pl
     plt.text(max(distrib_values)*0.9, median_idx-0.4, "median (" + "{:.2%}".format(median_prop) + ")", {"color": 'g', "fontsize": 10})
     plt.show()
 
+def filter_unique_rankings_stat(distrib, stability_level):
+    unique_rankings = []
+    for ranking in distrib:
+        if ranking[:stability_level] not in unique_rankings:
+            unique_rankings.append(ranking[:stability_level])
+
+    return unique_rankings
+
+def compute_distribution_stat(distrib, stability_level):
+    distrib_stat = {}
+    for ranking in distrib:
+        distrib_stat[ranking[:stability_level]] = distrib_stat.get(ranking[:stability_level],0) + distrib[ranking]
+
+    return distrib_stat
+
+def plot_compare_stat(distrib, distrib2, stability_level, plot_filename, plot_type):
+    unique_rankings = filter_unique_rankings_stat(distrib, stability_level)
+    unique_rankings2 = filter_unique_rankings_stat(distrib2, stability_level)
+    common, different1, different2 = compare(possible_weights, unique_rankings, possible_weights2, unique_rankings2)
+    distrib_stat = compute_distribution_stat(distrib, stability_level)
+    distrib_rankings = sorted(distrib_stat, key=distrib_stat.get)
+    distrib_values = sorted(distrib_stat.values())
+    total_obs = sum(distrib_values)
+    median_val = distrib_values[-1]
+    median_idx = len(distrib_rankings) - 1
+    while median_val < total_obs // 2 and median_idx >= 0:
+        median_idx -= 1
+        median_val += distrib_values[median_idx]
+    median_prop = (len(distrib_values) - median_idx) / len(distrib_values)
+    print("{:.2%}".format(median_prop))
+
+    fig, ax = plt.subplots()
+    y = np.arange(len(distrib_rankings))
+    barlist = plt.barh(y, distrib_values)
+    plt.xlabel("Occurrences (total: " + str(total_obs) + " observations)")
+
+    plt.yticks(y, distrib_rankings, fontsize=10)
+
+    colors_tick= ['k' for i in range(len(distrib_rankings))]
+    colors_bar = ['xkcd:cerulean' for i in range(len(distrib_rankings))]
+    for r in different1:
+        colors_tick[distrib_rankings.index(tuple(r))] = 'r'
+        colors_bar[distrib_rankings.index(tuple(r))] = 'r'
+
+    for bar, ytick, ct, cb in zip(barlist, ax.get_yticklabels(), colors_tick, colors_bar):
+        ytick.set_color(ct)
+        bar.set_color(cb)
+
+    if stability_level > 3:
+        plt.yticks([], [])
+
+    plt.plot([0, max(distrib_values)], [median_idx-0.5, median_idx-0.5], "g--")
+    plt.text(max(distrib_values)*0.9, median_idx-0.4, "median (" + "{:.2%}".format(median_prop) + ")", {"color": 'g', "fontsize": 10})
+    plt.show()
+
 def compute_distribution(all_rankings, stability_level):
     distrib = {}
     for ranking, netflows in all_rankings:
