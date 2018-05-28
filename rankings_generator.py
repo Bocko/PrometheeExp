@@ -222,6 +222,8 @@ def main():
         print("Problem:", "safecities2017")
     elif args.input[0] == 'gfsi2017':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.foodsecurity2017()
+    elif args.input[0] == 'di2017':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.democracy2017()
     else:
         raise("Please use 'test', 'epi2016', 'hdi2016' for now...")
 
@@ -242,6 +244,9 @@ def main():
 
     print("Chunk size:", chunk_size)
 
+    crit_nb = len(criteria_names)
+    print("Number of criteria:", crit_nb)
+
     if args.output != None:
         filename = args.output[0]
         print("Savefile:", filename)
@@ -254,8 +259,6 @@ def main():
     elif args.method[0].lower() == "maut":
         maut_flag = True
         print("Method: MAUT")
-
-    crit_nb = len(criteria_names)
     
     pool = multiprocessing.Pool(8)
 
