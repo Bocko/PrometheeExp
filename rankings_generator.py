@@ -220,6 +220,8 @@ def main():
     elif args.input[0] == 'safecities2017':
         criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.safecities2017()
         print("Problem:", "safecities2017")
+    elif args.input[0] == 'gfsi2017':
+        criteria_names, original_weights, func_pref_crit, alt_names, alt_eval = testproblem.foodsecurity2017()
     else:
         raise("Please use 'test', 'epi2016', 'hdi2016' for now...")
 
