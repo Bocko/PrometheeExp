@@ -18,12 +18,13 @@ LIB_DIR = 'lib'
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Promethee Expressivity')
 
-    parser.add_argument('-s','--step', nargs=1, type=float, required=True)
+    parser.add_argument('-s','--step', nargs=1, type=float)
     parser.add_argument('-i', '--input', nargs=1, type=str, required=True)
     parser.add_argument('-m', '--multiplier', nargs=1, type=int)
     parser.add_argument('-c', '--chunk_size', nargs=1, type=int)
     parser.add_argument('-d', '--method', nargs=1, type=str, required=True)
     parser.add_argument('-a', '--statonly', nargs='*', default=False)
+    parser.add_argument('-r', '--randomweights', nargs=1, type=int)
     # parser.add_argument('-t','--stability', nargs=1, type=int)
 
     parser.add_argument('-o','--output', nargs=1)
@@ -144,8 +145,8 @@ def maut_distrib(args):
 
 def generate_all_maut_distrib(pool, alt_eval, alt_names, all_weights):
     distrib = {}
-    for weights in all_weights:
-        prod = np.sum(np.array(alt_eval) * weights, axis=1)
+    for w in range(len(all_weights)):
+        prod = np.sum(np.array(alt_eval) * all_weights[w], axis=1)
         ranking = []
         score = []
         for i in sorted(enumerate(prod), key=lambda x: x[1], reverse=True):
@@ -154,6 +155,8 @@ def generate_all_maut_distrib(pool, alt_eval, alt_names, all_weights):
 
         tranking = tuple(ranking)
         distrib[tranking] = distrib.get(tranking,0) + 1
+        print(w+1, "/", len(all_weights))
+        os.system('clear')
     return distrib
 
 def weights_generator_recurs(alt_eval, int_possible_weights, func_pref_crit, alt_names, int_multiplier, w_sum, result, index):
@@ -191,11 +194,21 @@ def list_lib(libname):
 
 def main():
     args = parse_args()
-    if args.step[0] > 0:
-        step = args.step[0]
-    else:
-        print("Error: please enter positive step value")
+
+    if (args.step == None and args.randomweights == None) or (args.step != None and args.randomweights != None):
+        print("Error: use either step or randomweights")
         return
+
+    if args.randomweights != None:
+        randomweights = args.randomweights[0]
+        print("Random generation of weights:", randomweights)
+    else:
+        randomweights = 0
+        if args.step[0] > 0:
+            step = args.step[0]
+        else:
+            print("Error: please enter positive step value")
+            return
 
     if args.statonly == []:
         statonly = True
@@ -232,9 +245,10 @@ def main():
     else:
         int_multiplier = 100
     
-    possible_weights = weights_choice(step)
-    print("Possible weights:", possible_weights)
-    int_possible_weights = (possible_weights * int_multiplier).astype(int)
+    if args.randomweights == None:
+        possible_weights = weights_choice(step)
+        print("Possible weights:", possible_weights)
+        int_possible_weights = (possible_weights * int_multiplier).astype(int)
 
     if args.chunk_size != None:
         chunk_size = args.chunk_size[0]
@@ -301,25 +315,32 @@ def main():
             else:
                 pass
     else:
-        libname = os.path.join(LIB_DIR, "step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav")
-        try:    
-            all_weights = pickle.load(open(libname, "rb" ))
-            print("Found file for step " + str(step) + ":", libname)
+        if randomweights == 0:
+            libname = os.path.join(LIB_DIR, "step_" + re.sub("[^0-9]", "", str(step)) + "_" + str(crit_nb) + ".sav")
+            try:    
+                all_weights = pickle.load(open(libname, "rb" ))
+                print("Found file for step " + str(step) + ":", libname)
+                start = input("Start? y/[n]: ")
+                if start.upper() != "Y":
+                    return 0
+                # tic = time.time()
+            except:
+                print("File for step not found!")
+                start = input("Start? y/[n]: ")
+                if start.upper() != "Y":
+                    return 0
+                # tic = time.time()
+                # wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
+                wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
+                all_weights = pickle.load(open(libname, "rb" ))
+        else:
             start = input("Start? y/[n]: ")
             if start.upper() != "Y":
                 return 0
-            tic = time.time()
-        except:
-            print("File for step not found!")
-            start = input("Start? y/[n]: ")
-            if start.upper() != "Y":
-                return 0
-            tic = time.time()
-            # wg.weights_generator(pool, chunk, step, possible_weights, crit_nb, int_multiplier, int_multiplier)
-            wg.weights_generator_recurs_chunk(step, int_possible_weights, crit_nb, int_multiplier, int_multiplier, chunk_size, chunk_id)
-            all_weights = pickle.load(open(libname, "rb" ))
+            all_weights = np.random.dirichlet(np.ones(crit_nb), size=randomweights)
+            possible_weights = all_weights
         print("Length of all_weights:", len(all_weights))
-        print(time.time()-tic)
+        # print(time.time()-tic)
         if promethee_flag:
             all_weights = zip(itertools.repeat(alt_eval), all_weights, itertools.repeat(func_pref_crit), itertools.repeat(alt_names))
             all_rankings = generate_all_rankings2(pool, all_weights, func_pref_crit, alt_names, alt_eval)
@@ -336,7 +357,7 @@ def main():
             else:
                 pickle.dump([possible_weights, distrib], open(filename,'wb'),pickle.HIGHEST_PROTOCOL)
 
-    print(time.time()-tic)
+    # print(time.time()-tic)
     pool.close()
     pool.join()
 
